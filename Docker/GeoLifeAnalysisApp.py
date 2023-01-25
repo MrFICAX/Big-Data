@@ -28,12 +28,13 @@ if __name__ == '__main__':
                     	.add("label", "string")\
                     	.add("user", "integer")
                     	#.add("", "integer")\
+                        #.add("id", "integer")\
 
    #OVO RADI KADA SE POKRENE LOKALNO (setMaster("local"))
     #booksdata=spark.read.csv("app/geolife_gps_reduced.csv", schema=geoLifeSchema)
 
-    #geoLifeDataFrame = spark.read.option("header", True).csv(sys.argv[1], schema=geoLifeSchema)
-    geoLifeDataFrame=spark.read.option("header", True).csv("geolife_gps_trajectories.csv", schema=geoLifeSchema)
+    geoLifeDataFrame = spark.read.option("header", True).csv(sys.argv[1], schema=geoLifeSchema)
+    #geoLifeDataFrame=spark.read.option("header", True).csv("../geolife_gps_data_example.csv", schema=geoLifeSchema)
     geoLifeDataFrame.show(5)
     geoLifeDataFrame.printSchema()
    
@@ -67,14 +68,22 @@ if __name__ == '__main__':
     df = df.withColumn('day', F.regexp_replace('day', r'^[0]*', ''))
     df = df.withColumn('month', F.regexp_replace('month', r'^[0]*', ''))
 
+ 
+    df.show(20)
+    #df.select('user').distinct().show(2000)
+
+    print(sys.argv[1], sys.argv[2], sys.argv[3])
+#OVO RADI
+    #df.filter(df['lat'] >= sys.argv[2]).filter(df['lat'] <= sys.argv[3]).show()
+#OVO ISTO RADI
+    df.filter((df.lat >= sys.argv[2]) & (df.lat <= sys.argv[3])).show()
 
     df.show(20)
-    df.select('user').distinct().show(2000)
 
-    print(df.dropDuplicates(["user"]).select("user").collect())
-
-
-
+    #print(df.dropDuplicates(["user"]).select("user").collect())
+    # filteredDF = df.where(df.lat >= 39).where(df.lat <= 40).select()
+    # filteredDF.show()
+    # filteredDF.describe()
     # geolifeDF.show()
 
     # geolifeDF.select("lat", "lon", "alt").describe().show()

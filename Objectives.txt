@@ -1,2 +1,4 @@
  
 1. Give all users that were at current time range and current location range
+
+    INPUT EXAMPLE: ['year', 'lat', 'lon', '|', 2005, 2006, 34.3, 35.5, 45.5, 46.7]

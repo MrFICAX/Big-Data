@@ -6,6 +6,22 @@ from pyspark.sql.types import StructType
 from pyspark.sql.functions import *
 import pyspark.sql.functions as F
 
+def filterDataFrameByLatitude(latMin, latMax):
+    return df.filter((df.lat >= latMin) & (df.lat <= latMax)).show()
+
+def filterDataFrameByLongitude(lonMin, lonMax):
+    return df.filter((df.lon >= lonMin) & (df.lon <= lonMax)).show()
+
+def filterDataFrameByYear(yearMin, yearMax):
+    return df.filter((df.year >= yearMin) & (df.year <= yearMax)).show()
+    
+def filterDataFrameByMonth(monthMin, monthMax):
+    return df.filter((df.year >= monthMin) & (df.month <= monthMax)).show()
+
+def filterDataFrameByDay(dayMin, dayMax):
+    return df.filter((df.day >= dayMin) & (df.day <= dayMax)).show()
+
+
 if __name__ == '__main__':
     # if len(sys.argv) != 2:
     #     print("Usage: main.py <input folder> ")
@@ -71,6 +87,8 @@ if __name__ == '__main__':
  
     df.show(20)
     #df.select('user').distinct().show(2000)
+
+    option = sys.argv[2]
 
     print(sys.argv[1], sys.argv[2], sys.argv[3])
 #OVO RADI

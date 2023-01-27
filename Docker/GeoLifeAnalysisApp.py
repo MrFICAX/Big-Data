@@ -5,8 +5,6 @@ from pyspark.sql.types import StructType
 # from pyspark.sql.functions import split, col
 from pyspark.sql.functions import *
 import pyspark.sql.functions as F
-import copy
-from pyspark.sql.types import IntegerType
 
 
 def filterDataFrameByLatitude(df, latMin, latMax):
@@ -79,15 +77,16 @@ def findDfBasedOnInputValues(inputDictionary, inputDf):
                 print("Filtered by key: " + key)
                 tmpDf.show(20)
         return tmpDf
+
 def printLine():
     print("*******************************************************************************")
     print("-------------------------------------------------------------------------------")
     print("*******************************************************************************")
 
 if __name__ == '__main__':
-    # if len(sys.argv) != 2:
-    #     print("Usage: main.py <input folder> ")
-    #     exit(-1)
+    if len(sys.argv) < 2:
+        print("Usage: main.py <input folder> ")
+        exit(-1)
 
     appName = "GeoLifeGpsAnalysis"
 
@@ -97,6 +96,7 @@ if __name__ == '__main__':
     conf.set("spark.driver.memory","4g")
 
     spark = SparkSession.builder.config(conf=conf).appName(appName).getOrCreate()
+    spark.sparkContext.setLogLevel("ERROR")
 
     geoLifeSchema = StructType() \
                     	.add("time", "string")\
@@ -105,55 +105,32 @@ if __name__ == '__main__':
                         .add("alt", "float")\
                     	.add("label", "string")\
                     	.add("user", "integer")
-                    	#.add("", "integer")\
-                        #.add("id", "integer")\
-
-   #OVO RADI KADA SE POKRENE LOKALNO (setMaster("local"))
-    #booksdata=spark.read.csv("app/geolife_gps_reduced.csv", schema=geoLifeSchema)
 
     geoLifeDataFrame = spark.read.option("header", True).csv(sys.argv[1], schema=geoLifeSchema)
                     #geoLifeDataFrame=spark.read.option("header", True).csv("../geolife_gps_data_example.csv", schema=geoLifeSchema)
-    # geoLifeDataFrame.show(5)
-    # geoLifeDataFrame.printSchema()
+    geoLifeDataFrame.show(25)
+    #geoLifeDataFrame.printSchema()
        
     splitDFTime = geoLifeDataFrame.withColumn("date",split(col("time")," ").getItem(0))\
         .withColumn("exacttime",split(col("time")," ").getItem(1))\
         .drop("time")
-    # splitDFTime.printSchema()
-    # splitDFTime.show(10)
 
     splitDFYear = splitDFTime.withColumn("year",split(col("date"),"-").getItem(0))\
         .withColumn("month",split(col("date"),"-").getItem(1))\
         .withColumn("day",split(col("date"),"-").getItem(2))\
         .drop("date")
 
-    # splitDFYear.printSchema()
-    # splitDFYear.show()
 
     splitDFTime = splitDFYear.withColumn("hour",split(col("exacttime"),":").getItem(0))\
         .withColumn("minute",split(col("exacttime"),":").getItem(1))\
         .withColumn("second",split(col("exacttime"),":").getItem(2))\
         .drop("exacttime")
-    # splitDFTime.printSchema()
-    # splitDFTime.show()
-
 
     df = splitDFTime.withColumn('hour', F.regexp_replace('hour', r'^[0]*', ''))
     df = df.withColumn('minute', F.regexp_replace('minute', r'^[0]*', ''))
     df = df.withColumn('second', F.regexp_replace('second', r'^[0]*', ''))
     df = df.withColumn('day', F.regexp_replace('day', r'^[0]*', ''))
     df = df.withColumn('month', F.regexp_replace('month', r'^[0]*', ''))
-
- 
-    df.show(20)
-    df.printSchema()
-
-    # df= df.withColumn("year",col("year").cast(IntegerType))\
-    #         .withColumn("month",col("month").cast(IntegerType))\
-    #          .withColumn("day",col("day").cast(IntegerType))\
-    #           .withColumn("hour",col("hour").cast(IntegerType))\
-    #            .withColumn("minute",col("minute").cast(IntegerType))\
-    #             .withColumn("second",col("second").cast(IntegerType))
 
     cols = ["year", "month", "day", "hour", "minute", "second"]
     for col_name in cols:
@@ -171,31 +148,8 @@ if __name__ == '__main__':
     filteredDf.show(25)
     filteredDf.describe().show()
 
-    #SHOWING ALL USERS AT EXACT PARAMETER VALUES
-    df.select('user').distinct().show(2000)
+    df.select('user').distinct().sort('user').show(2000)
 
     df.select('label').distinct().show(2000)
 
-
-                
-
-#OVO RADI
-    #df.filter(df['lat'] >= sys.argv[2]).filter(df['lat'] <= sys.argv[3]).show()
-#OVO ISTO RADI
-    #df.filter((df.lat >= sys.argv[2]) & (df.lat <= sys.argv[3])).show()
-
-
-
-
-
-    #df.show(20)
-
-    #print(df.dropDuplicates(["user"]).select("user").collect())
-    # filteredDF = df.where(df.lat >= 39).where(df.lat <= 40).select()
-    # filteredDF.show()
-    # filteredDF.describe()
-    # geolifeDF.show()
-
-    # geolifeDF.select("lat", "lon", "alt").describe().show()
-        
     spark.stop()

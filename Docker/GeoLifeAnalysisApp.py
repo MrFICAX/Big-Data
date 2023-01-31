@@ -40,7 +40,7 @@ def filterDataFrameBySecond(df, secondMin, secondMax):
 def readInputValues():
     delimiterFound = False
     features = {}
-    for arg in sys.argv[2:]:
+    for arg in sys.argv[3:]:
         if arg == "|":
             delimiterFound = True
             continue
@@ -144,12 +144,30 @@ if __name__ == '__main__':
     print(inputValuesDictionary)
 
     filteredDf = findDfBasedOnInputValues(inputValuesDictionary, df)
+    print("FILTERED DATA:")
     filteredDf.printSchema()
     filteredDf.show(25)
     filteredDf.describe().show()
 
-    df.select('user').distinct().sort('user').show(2000)
+    filteredDf.coalesce(1).write.mode('overwrite').option("header",True) \
+     .csv(sys.argv[2])
 
-    df.select('label').distinct().show(2000)
+    print("SELECT USERS WHICH WALKED FROM FILTERED DATA:")
+    filteredDf.filter(df.label == "walk").select('user').distinct().sort('user').show(truncate=False)
+
+    print("MEAN VALUE OF LATITUDE, LONGITUDE AND ALTITUDE IN FILTERED DATAFRAME:")
+    filteredDf.select(mean('lat'), mean('lon'), mean('alt')).show()
+
+    print("MIN VALUE OF LATITUDE, LONGITUDE AND ALTITUDE IN FILTERED DATAFRAME:")
+    filteredDf.select(min('lat'), min('lon'), min('alt')).show()
+
+    print("MAX VALUE OF LATITUDE, LONGITUDE AND ALTITUDE IN FILTERED DATAFRAME:")
+    filteredDf.select(max('lat'), max('lon'), max('alt')).show()
+
+    print("DISTINCT USER VALUES IN FILTERED DATAFRAME:")
+    filteredDf.select('user').distinct().sort('user').show(2000)
+
+    print("DISTINCT LABEL VALUES IN FILTERED DATAFRAME:")
+    filteredDf.select('label').distinct().show(2000)
 
     spark.stop()

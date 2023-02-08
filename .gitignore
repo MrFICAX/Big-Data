@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 
 geolife_gps_trajectories.csv
+geolife_gps_sorted.csv
+#*.csv
 
 # C extensions
 *.so

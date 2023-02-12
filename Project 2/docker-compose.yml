@@ -101,7 +101,7 @@ services:
       - "SPARK_MASTER=spark://spark-master-x:7077"
       - SPARK_WORKER_WEBUI_PORT=8071
   jobmanager:
-    image: ${FLINK_DOCKER_IMAGE_NAME:-flink}
+    image: flink:latest
     expose:
       - "6123"
     ports:
@@ -111,7 +111,7 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
 
   taskmanager:
-    image: ${FLINK_DOCKER_IMAGE_NAME:-flink}
+    image: flink:latest
     expose:
       - "6121"
       - "6122"

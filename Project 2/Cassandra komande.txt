@@ -43,6 +43,15 @@ CREATE TABLE geoLocation(
  user text
  );
 
+CREATE TABLE geoLocation(
+ start text,
+ end text,
+ user text PRIMARY KEY,
+ meanValue text,
+ maxValue text,
+ minValue text
+ );
+
 PRIKAZ DETALJA TABELE :
 cqlsh:locationsdb> DESC TABLE musics_by_genre;
 

@@ -34,7 +34,7 @@ services:
       DATA: data/geolife_gps_sorted.csv
       KAFKA_HOST: kafka:9092
       KAFKA_TOPIC: locations
-      KAFKA_INTERVAL: 3
+      KAFKA_INTERVAL: 0.5
 
   consumer_spark:
     build: 

@@ -17,6 +17,17 @@ while True:
         headers = next(reader)
         for row in reader:
             value = {headers[i]: row[i] for i in range(len(headers))}
+            value["lat"] = float(value["lat"])
+            value["lon"] = float(value["lon"])
+            value["alt"] = float(value["alt"])
+            value["user"] = int(value["user"])
             value["ts"] = int(time.time())
+            value["year"] = int(value["year"])
+            value["month"] = int(value["month"])
+            value["day"] = int(value["day"])
+            value["hour"] = int(value["hour"])
+            value["minute"] = int(value["minute"])
+            value["second"] = int(value["second"])
+            print(value)
             producer.send(os.environ["KAFKA_TOPIC"], value=value)
             time.sleep(float(os.environ["KAFKA_INTERVAL"]))

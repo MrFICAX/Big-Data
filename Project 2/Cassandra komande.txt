@@ -1,0 +1,60 @@
+OTVARANJE TERMINALA CASSANDRA KONTEJNERA U cmd-u:
+> docker-compose exec cassandra /bin/bash
+
+POKRETANJE CQLSH u terminalu kontejnera:
+# cqlsh
+
+PRIKAZ KEYSPACE-OVA:
+cqlsh> DESC keyspaces;
+
+KREIRANJE NOVOG KEYSPACE-a:
+cqlsh> CREATE KEYSPACE musicDb WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : '3'};
+
+SETOVANJE DEFAULT-NOG KEYSPACE-a:
+cqlsh> USE musicDb;
+
+KREIRANJE TABELE UNUTAR KEYSPACE-a:
+cqlsh:locationsdb>
+ CREATE TABLE musics_by_genre (
+  genre VARCHAR,
+  performer VARCHAR,
+  year INT,
+  title VARCHAR,
+  PRIMARY KEY ((genre), performer, year, title)
+) WITH CLUSTERING ORDER BY (performer ASC, year DESC, title ASC);
+
+ CREATE TABLE bycicle (
+ id int PRIMARY KEY,
+ price int,
+ title text,
+ type text,
+ brand text,
+ color text,
+ description text
+ );
+
+CREATE TABLE geoLocation(
+ id int PRIMARY KEY,
+ time text,
+ lat text,
+ lon text,
+ alt text,
+ label text,
+ user text
+ );
+
+PRIKAZ DETALJA TABELE :
+cqlsh:locationsdb> DESC TABLE musics_by_genre;
+
+DODAVANJE PODATAKA U TABELU:
+cqlsh:locationsdb> INSERT INTO musics_by_genre (genre, performer, year, title) VALUES ('Rock', 'Nirvana', 1991, 'Smells Like Teen Spirit');
+
+DODAVANJE NOVE KOLONE U POSTOJECU TABELU (tabela -> bycicle, nova kolona -> nation tipa text):
+> ALTER COLUMNFAMILY bycicle ADD nation text;
+
+POSTAVLJANJE CONSISTENCY VREDNOSTI: (consistency vrednost - ukoliko je broj aktivnih replikacija/kontejnera jednak ovom broju, rezultat ce se dobiti, ukoliko nije, nece.
+> CONSISTENCY ALL;
+> CONSISTENCY ONE;
+
+SELECT KOMANDE:
+> SELECT * FROM musics_by_genre WHERE genre='Rock';

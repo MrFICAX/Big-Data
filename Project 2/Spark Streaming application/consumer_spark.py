@@ -1,68 +1,165 @@
 import os
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType
-from pyspark.sql.functions import col, from_json, window
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, DoubleType
+from pyspark.sql.functions import col, from_json, window, count, mean, max, min
 from pyspark import SparkConf
+from pyspark.sql import Window
+import sys
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.2.0, org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.0 pyspark-shell'
+def filterDataFrameByLatitude(df, latMin, latMax):
+    print("filterDataFrameByLatitude entered")
+    return df.where(col("parsed_values.lat") > latMin).where(col("parsed_values.lat") < latMax)
 
-conf = SparkConf()
-conf.setMaster("spark://spark-master-x:7077")   #("spark://spark-master-x:7077")
-#conf.setMaster("local")
-conf.set("spark.driver.memory","4g")
+def filterDataFrameByLongitude(df, lonMin, lonMax):
+    print("filterDataFrameByLongitude entered")
+    return df.where(col("parsed_values.lon") > lonMin).where(col("parsed_values.lon") < lonMax)
 
+def readInputValues():
+    delimiterFound = False
+    features = {}
+    for arg in sys.argv[1:]:
+        if arg == "|":
+            delimiterFound = True
+            continue
+        if not delimiterFound:
+            if arg not in features.keys():
+                features[arg] = []
+        else:
+            for key in features.keys():
+                if (len(features[key]) != 2):
+                    features[key].append(float(arg))
+                    break
+    return features
 
-spark = SparkSession.builder.config(conf=conf).appName("AverageLatitude").getOrCreate()
+def findDfBasedOnInputValues(inputDictionary, inputDf):
+        #tmpDf = inputDf.copy()
+        tmpDf = inputDf.alias('tmpDf')
+        switcher = {
+                "lat": filterDataFrameByLatitude,
+                "lon": filterDataFrameByLongitude
+            }
+        for key in inputDictionary.keys():
+            method = switcher.get(key, "nothing")
+            if (method != "nothing"):
+                tmpDf = method(tmpDf, inputDictionary[key][0], inputDictionary[key][1])
+                printLine()
+                print("Filtered by key: " + key)
+        return tmpDf
 
-# Get rid of INFO and WARN logs.
-spark.sparkContext.setLogLevel("ERROR")
+def printLine():
+    print("*******************************************************************************")
+    print("-------------------------------------------------------------------------------")
+    print("*******************************************************************************")
 
-df = (
-    spark.readStream.format("kafka")
-    .option("kafka.bootstrap.servers", "kafka:9092")
-    .option("subscribe", "locations")
-    .option("startingOffsets", "latest")
-    .load()
-)
+# org.apache.spark:spark-streaming-kafka-0-10_2.12:3.1.2, com.datastax.spark:spark-cassandra-connector_2.12:3.0.0
 
-#time,lat,lon,alt,label,user
 schema = StructType(
     [
-        StructField("time", StringType()),
-        StructField("lat", StringType()),
-        StructField("lon", StringType()),
-        StructField("alt", StringType()),
+        StructField("lat", FloatType()),
+        StructField("lon", FloatType()),
+        StructField("alt", FloatType()),
         StructField("label", StringType()),
         StructField("user", StringType()),
+        StructField("year", IntegerType()),
+        StructField("month", IntegerType()),
+        StructField("day", IntegerType()),
+        StructField("hour", IntegerType()),
+        StructField("minute", IntegerType()),
+        StructField("second", IntegerType()),
+        StructField("ts", IntegerType())
     ]
 )
 
-# Parse the "value" field as JSON format.
-parsed_values = df.select(
-    "timestamp", from_json(col("value").cast("string"), schema).alias("parsed_values")
-)
-# We only need the Age column for now.
-latitudes = parsed_values.selectExpr("timestamp", "parsed_values.lat AS lat")
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Usage: main.py <input folder> ")
+        exit(-1)
 
-dates = parsed_values.selectExpr("parsed_values.time AS time")
-latitudes = parsed_values.selectExpr("parsed_values.lat AS lat")
-longitudes = parsed_values.selectExpr( "parsed_values.lon AS lon")
-altitudes = parsed_values.selectExpr("parsed_values.alt AS alt")
-labels = parsed_values.selectExpr("parsed_values.label AS label")
-users = parsed_values.selectExpr("parsed_values.user AS user")
+    inputValuesDictionary = readInputValues()
+    print(inputValuesDictionary)
+
+    
+    conf = SparkConf()
+    #conf.setMaster("spark://spark-master-x:7077")
+    conf.setMaster("local")
+    conf.set("spark.driver.memory","4g")
+    conf.set("spark.cassandra.connection.host", "cassandra")
+    conf.set("spark.cassandra.connection.port", 9042)
+
+    spark = SparkSession.builder.config(conf=conf).appName("AverageLatitude").getOrCreate()
+
+    spark.sparkContext.setLogLevel("ERROR")
+
+    df = (
+        spark.readStream.format("kafka")
+        .option("kafka.bootstrap.servers", "kafka:9092")
+        .option("subscribe", "locations")
+        .option("startingOffsets", "latest")
+        .load()
+    )
+
+    # df1 = df.selectExpr("CAST(value AS STRING)").select(from_json(col("value"), schema).alias("data")).select("data.*")
+
+    parsed_valuesWithTimestamp = df.select(
+        "timestamp", from_json(col("value").cast("string"), schema).alias("parsed_values")
+    )
 
 
-# We set a window size of 10 seconds, sliding every 5 seconds.
-# averageAge = latitudes.groupBy(window(latitudes.timestamp, "10 seconds", "5 seconds")).agg(
-#     {"lat": "avg"}
-# )
+    parsed_valuesWithTimestamp.printSchema()
+    #parsed_valuesWithTimestamp = parsed_valuesWithTimestamp.where(col("parsed_values.lat") > inputValuesDictionary["lat"][0]).where(col("parsed_values.lat") < inputValuesDictionary["lat"][1])
 
-query = (
-    latitudes.writeStream.outputMode("update")
-    .queryName("average_latitude")
-    .format("console")
-    .trigger(processingTime="10 seconds")
-    .option("truncate", "false")
-    .start()
-    .awaitTermination()
-)
+    parsed_valuesWithTimestamp = findDfBasedOnInputValues(inputValuesDictionary, parsed_valuesWithTimestamp)
+
+    timestampXaltitudes = parsed_valuesWithTimestamp.selectExpr("timestamp", "parsed_values.alt AS alt", "parsed_values.user AS user")
+
+    parsed_values = parsed_valuesWithTimestamp.selectExpr("parsed_values.*")
+    #parsed_values.printSchema()
+    timestamps = parsed_values.selectExpr("ts AS ts")
+    latitudes = parsed_values.selectExpr("lat AS lat")
+    longitudes = parsed_values.selectExpr( "lon AS lon")
+    altitudes = parsed_values.selectExpr("alt AS alt")
+    labels = parsed_values.selectExpr("label AS label")
+    users = parsed_values.selectExpr("user AS user")
+
+
+    #timestampXaltitudes.printSchema()
+    AltitudeValuesAvgWindows = timestampXaltitudes.groupBy(window(timestampXaltitudes.timestamp, "10 seconds", "10 seconds"), timestampXaltitudes.user).agg(
+        mean("alt").alias("meanvalue"),
+        max("alt").alias("maxvalue"),
+        min("alt").alias("minvalue"),
+        count("user").alias("times_data_sent")
+    )
+
+
+    #AltitudeValuesAvgWindows.printSchema()
+    AltitudeValuesAvgWindowsForDB = AltitudeValuesAvgWindows.selectExpr("window.start as start", "window.end as end", "user", "meanvalue", "maxvalue", "minvalue", "times_data_sent" )
+    #AltitudeValuesAvgWindowsForDB.printSchema()
+
+
+    query = (
+        AltitudeValuesAvgWindows.writeStream.outputMode("update")
+        .queryName("average_latitude")
+        .format("console") # format("org.apache.spark.sql.cassandra").options(**load_options)
+        .trigger(processingTime="1 seconds")
+        .option("truncate", "false")
+        .start()
+        #.awaitTermination()
+    )
+
+    #########################################################################################
+    ##################         UPIS U CASSANDRA BAZU PODATAKA         #######################
+    #########################################################################################
+
+    def writeToCassandra(writeDF, _):
+        writeDF.write \
+            .format("org.apache.spark.sql.cassandra")\
+            .mode('append')\
+            .options(table="geolocation", keyspace="locations_db")\
+            .save()
+
+    AltitudeValuesAvgWindowsForDB.writeStream \
+        .option("spark.cassandra.connection.host","cassandra:9042")\
+        .foreachBatch(writeToCassandra) \
+        .outputMode("update") \
+        .start()\
+        .awaitTermination()

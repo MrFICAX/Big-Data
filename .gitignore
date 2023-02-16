@@ -7,6 +7,7 @@ geolife_gps_trajectories.csv
 geolife_gps_sorted.csv
 #*.csv
 
+Project 2/flink-projekat-2/target
 # C extensions
 *.so
 
@@ -76,7 +77,7 @@ instance/
 docs/_build/
 
 # PyBuilder
-#target/
+target
 
 # Jupyter Notebook
 .ipynb_checkpoints

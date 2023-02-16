@@ -59,7 +59,7 @@ public class DataStreamJob {
 
         StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
         String inputTopic = "locations";
-        String server = "kafka:9092"; //""localhost:9091"; //kafka:9092
+        String server = "kafka:9092";
 
         DataStream<String> dataStream = StreamConsumer(inputTopic, server, environment);
 

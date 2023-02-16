@@ -18,14 +18,29 @@
 
 package projekat;
 
+import models.Location;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import java.util.Objects;
 import java.util.Properties;
 
+import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.apache.flink.util.Collector;
+
 /**
  * Skeleton for a Flink DataStream Job.
  *
@@ -40,68 +55,94 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
  */
 public class DataStreamJob {
 
-	public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-			String inputTopic = "locations";
-			String server = "kafka:9092";
+        StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
+        String inputTopic = "locations";
+        String server = "kafka:9092"; //""localhost:9091"; //kafka:9092
 
-			StramConsumrer(inputTopic, server);
-		}
+        DataStream<String> dataStream = StreamConsumer(inputTopic, server, environment);
 
-		public static void StramConsumrer(String inputTopic, String server) throws Exception {
-			StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
-			FlinkKafkaConsumer<String> flinkKafkaConsumer = createStringConsumerForTopic(inputTopic, server);
-			DataStream<String> stringInputStream = environment.addSource(flinkKafkaConsumer);
+        DataStream<Location> locationStream = ConvertStreamFromJsonToLocationType(dataStream);
+        //locationStream.print();
 
+        SingleOutputStreamOperator windowedStream = locationStream
+                .keyBy(Location::getUser)
+                .window(SlidingProcessingTimeWindows.of(Time.seconds(10), Time.seconds(10)))
+                .aggregate(new AverageAggregate());
 
-			stringInputStream.map(new MapFunction<String, String>() {
-				private static final long serialVersionUID = -999736771747691234L;
+        SingleOutputStreamOperator windowedStream2 = locationStream
+                .keyBy(Location::getUser)
+                .window(SlidingProcessingTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+                .process(new MyProcessWindowFunction());
+                //.aggregate(new AverageAggregate(), new MyProcessWindowFunction() );
 
-				@Override
-				public String map(String value) throws Exception {
-					return "Receiving from Kafka : " + value;
-				}
-			}).print();
-			System.out.println( "Hello World!" );
-			environment.execute();
-		}
+        //windowedStream.print();
+        //windowedStream2.print();
 
-		public static FlinkKafkaConsumer<String> createStringConsumerForTopic(
-				String topic, String kafkaAddress) {
-
-			Properties props = new Properties();
-			props.setProperty("bootstrap.servers", kafkaAddress);
-			//props.setProperty("group.id",kafkaGroup);
-			FlinkKafkaConsumer<String> consumer = new FlinkKafkaConsumer<>(
-					topic, new SimpleStringSchema(), props);
-
-			return consumer;
-		}
+        CassandraService cassandraService = new CassandraService();
+        cassandraService.sinkToCassandraDB(windowedStream);
 
 
+        environment.execute();
+
+    }
+
+    public static DataStream<Location> ConvertStreamFromJsonToLocationType(DataStream<String> jsonStream) {
+        return jsonStream.map(kafkaMessage -> {
+            try {
+                JsonNode jsonNode = new ObjectMapper().readValue(kafkaMessage, JsonNode.class);
+                return Location.builder()
+                        .Latitude(jsonNode.get("lat").asDouble())
+                        .Longitude(jsonNode.get("lon").asDouble())
+                        .Altitude(jsonNode.get("alt").asDouble())
+                        .Label(jsonNode.get("label").asText())
+                        .User(jsonNode.get("user").asText())
+                        .Year(jsonNode.get("year").asInt())
+                        .Month(jsonNode.get("month").asInt())
+                        .Day(jsonNode.get("day").asInt())
+                        .Hour(jsonNode.get("hour").asInt())
+                        .Minute(jsonNode.get("minute").asInt())
+                        .Second(jsonNode.get("second").asInt())
+                        .Timestamp(jsonNode.get("ts").asInt())
+                        .build();
+
+            } catch (Exception e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).forward();
+    }
 
 
+    public static DataStream<String> StreamConsumer(String inputTopic, String server, StreamExecutionEnvironment environment) throws Exception {
+        FlinkKafkaConsumer<String> flinkKafkaConsumer = createStringConsumerForTopic(inputTopic, server);
+        DataStream<String> stringInputStream = environment.addSource(flinkKafkaConsumer);
 
 
+        return stringInputStream.map(new MapFunction<String, String>() {
+            private static final long serialVersionUID = -999736771747691234L;
+
+            @Override
+            public String map(String value) throws Exception {
+                return value;
+            }
+        });
+    }
+
+    public static FlinkKafkaConsumer<String> createStringConsumerForTopic(
+            String topic, String kafkaAddress) {
+
+        Properties props = new Properties();
+        props.setProperty("bootstrap.servers", kafkaAddress);
+        //props.setProperty("group.id",kafkaGroup);
+        FlinkKafkaConsumer<String> consumer = new FlinkKafkaConsumer<>(
+                topic, new SimpleStringSchema(), props);
+
+        return consumer;
+    }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		//		// Sets up the execution environment, which is the main entry point
+    //		// Sets up the execution environment, which is the main entry point
 //		// to building Flink applications.
 //		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 //
@@ -127,4 +168,7 @@ public class DataStreamJob {
 //
 //		// Execute program, beginning computation.
 //		env.execute("Flink Java API Skeleton");
-	}
+}
+
+
+

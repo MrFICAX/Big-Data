@@ -1,2 +1,7 @@
-projekat\DataStreamJob.class
+models\Location.class
+projekat\MyProcessWindowFunction.class
+projekat\AverageAggregate.class
+projekat\CassandraService.class
 projekat\DataStreamJob$1.class
+projekat\DataStreamJob.class
+models\Location$LocationBuilder.class

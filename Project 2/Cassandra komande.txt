@@ -52,6 +52,14 @@ CREATE TABLE geoLocation(
  minValue text
  );
 
+ CREATE TABLE flinkgeoLocation(
+ user text PRIMARY KEY,
+ minValue text,
+ maxValue text,
+ meanValue text,
+ count text
+ );
+
 PRIKAZ DETALJA TABELE :
 cqlsh:locationsdb> DESC TABLE musics_by_genre;
 

@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+#DataSets
 geolife_gps_trajectories.csv
 geolife_gps_sorted.csv
+geolife_gps_sorted_without_nodata.csv
 #*.csv
 
 Project 2/flink-projekat-2/target

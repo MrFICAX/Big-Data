@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  influxdb:
+    image: influxdb:2.1.1
+    container_name: influxdb
+    hostname: influxdb
+    environment:
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_DB=geolifegpsdb
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=2c83186a-caab-425a-9594-9d4c00544939
+    ports:
+      - 8086:8086
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    hostname: grafana
+    depends_on:
+      - influxdb
+    ports:
+      - 3000:3000
+
+networks:
+  default:
+    name: FT_project3_network

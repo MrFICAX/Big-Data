@@ -1,0 +1,11 @@
+
+
+
+KREIRANJE IMAGE-a:
+docker build --rm -t bde/spark-app .
+
+POKRETANJE KONTEJNERA:
+docker run --name SparkStreamingApp --net project2_default -p 4042:4042 bde/spark-app
+
+POKRETANJE KONTEJNERA KOJI SE BRISE ODMAH NAKON STO SE UGASI 
+docker run --name SparkStreamingApp --net project2_default -p 4042:4042 --rm bde/spark-app

@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:  
+  namenode-3:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode-3
+    restart: always
+    ports:
+      - 9870:9870
+      - 9000:9000
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - $HOME/data:/data
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop.env
+
+  datanode-3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode-3
+    restart: always
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode-3:9870"
+    env_file:
+      - ./hadoop.env
+
+  resourcemanager-3:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager-3
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode-3:9000 namenode-3:9870 datanode-3:9864"
+    env_file:
+      - ./hadoop.env
+
+  nodemanager-3:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager-3
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode-3:9000 namenode-3:9870 datanode-3:9864 resourcemanager-3:8088"
+    env_file:
+      - ./hadoop.env
+
+  historyserver-3:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver-3
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode-3:9000 namenode-3:9870 datanode-3:9864 resourcemanager-3:8088"
+    volumes:
+      - hadoop_historyserver:/hadoop/yarn/timeline
+    env_file:
+      - ./hadoop.env
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  hadoop_historyserver:
+
+networks:
+  default:
+    name: FT_project3_network

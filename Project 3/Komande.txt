@@ -1,0 +1,6 @@
+Generisanje random 32 karaktera:
+openssl rand -hex 32
+
+
+KREIRANJE POJEDINACNOG KONTEJNERA UKOLIKO SE NESTO PROMENI:
+docker-compose up --build producer

@@ -4,7 +4,7 @@ from pyspark.sql.types import StructType, StructField, StringType, FloatType, In
 from pyspark.sql.functions import col, from_json, window, count, mean, max, min
 from pyspark import SparkConf
 import sys
-from pyspark.ml.feature import StringIndexer, VectorAssembler, MinMaxScaler
+from pyspark.ml.feature import StringIndexer, VectorAssembler, MinMaxScaler, StringIndexerModel
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml import PipelineModel
@@ -30,6 +30,12 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: main.py <input folder> ")
         exit(-1)
+
+    SCALER_LOCATION = os.getenv('SCALER_LOC')
+    INDEXER_PIPELINE_LOC = os.getenv('INDEXER_PIPELINE_LOC')
+    CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
+
+
 
     # inputValuesDictionary = readInputValues()
     # print(inputValuesDictionary)
@@ -63,10 +69,9 @@ if __name__ == '__main__':
 
     fitted_indexer = pipeline.fit(df)
 
-    fitted_indexer.write().overwrite().save(
-        "hdfs://namenode:9000/model/IndexerPipeline")
+    fitted_indexer.write().overwrite().save(INDEXER_PIPELINE_LOC) #("hdfs://namenode:9000/model/IndexerPipeline")
 
-    indexer_model = PipelineModel.load("hdfs://namenode:9000/model/IndexerPipeline")
+    indexer_model = PipelineModel.load(INDEXER_PIPELINE_LOC) #("hdfs://namenode:9000/model/IndexerPipeline")
 
     indexedDf = indexer_model.transform(df)
 
@@ -75,7 +80,7 @@ if __name__ == '__main__':
     indexedDf = indexedDf.drop("label")
     indexedDf = indexedDf.drop("user")
 
-    features = ["lat", "lon", "alt", "label_index",
+    features = ["lat", "lon", "alt", "user_index",
                 "year", "month", "day", "hour", "minute", "second"]
 
     featureAssembler = VectorAssembler(
@@ -85,13 +90,16 @@ if __name__ == '__main__':
 
     scaler = MinMaxScaler(inputCol="features", outputCol="scaledFeatures")
 
-    fitScalerData = scaler.fit(assembleredDf)
+    fitScaler = scaler.fit(assembleredDf)
 
-    scaledData = fitScalerData.transform(assembleredDf)
+    fitScaler.write().overwrite().save(SCALER_LOCATION)
+
+
+    scaledData = fitScaler.transform(assembleredDf)
 
     scaledData.show()
 
-    finalDf = scaledData.select("scaledFeatures", "user_index")
+    finalDf = scaledData.select("scaledFeatures", "label_index")
 
     # user_indexer = StringIndexer(
     #     inputCol="user", outputCol="user_index").fit(finalDf)
@@ -105,7 +113,7 @@ if __name__ == '__main__':
     train_data, test_data = finalDf.randomSplit([0.8, 0.2], seed=42)
 
     rf = RandomForestClassifier(
-        featuresCol='scaledFeatures', labelCol='user_index', maxDepth=10)
+        featuresCol='scaledFeatures', labelCol='label_index', maxDepth=10)
 
     rfModel = rf.fit(train_data)
 
@@ -117,17 +125,17 @@ if __name__ == '__main__':
 # metricName="recallByLabel"
 
     evaluatorAccuracy = MulticlassClassificationEvaluator(
-        labelCol="user_index", predictionCol="prediction", metricName="accuracy")
+        labelCol="label_index", predictionCol="prediction", metricName="accuracy")
     evaluatorF1 = MulticlassClassificationEvaluator(
-        labelCol="user_index", predictionCol="prediction", metricName="f1")
+        labelCol="label_index", predictionCol="prediction", metricName="f1")
     evaluatorByLabel = MulticlassClassificationEvaluator(
-        labelCol="user_index", predictionCol="prediction", metricName="precisionByLabel")
+        labelCol="label_index", predictionCol="prediction", metricName="precisionByLabel")
     evaluatorRecallByLabel = MulticlassClassificationEvaluator(
-        labelCol="user_index", predictionCol="prediction", metricName="recallByLabel")
+        labelCol="label_index", predictionCol="prediction", metricName="recallByLabel")
 
     print(evaluatorAccuracy.evaluate(predictions))
     print(evaluatorAccuracy.evaluate(predictions))
     print(evaluatorByLabel.evaluate(predictions))
     print(evaluatorRecallByLabel.evaluate(predictions))
 
-    rfModel.write().overwrite().save("hdfs://namenode:9000/model/RfModel")
+    rfModel.write().overwrite().save(CLASSIFICATION_MODEL) #("hdfs://namenode:9000/model/RfModel")

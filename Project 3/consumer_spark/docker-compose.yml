@@ -1,0 +1,19 @@
+version: "3"
+
+
+services:
+  consumer_spark:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "4040:4040"
+    environment:
+      SCRIPT: ./consumer_spark.py
+      KAFKA_HOST: kafka-3:9092
+      KAFKA_TOPIC: locations
+      KAFKA_CONSUMER_GROUP: Spark-Group
+
+networks:
+  default:
+    name: FT_project3_network  

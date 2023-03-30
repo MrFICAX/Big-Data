@@ -68,7 +68,7 @@ public class DataStreamJob {
 
         SingleOutputStreamOperator windowedStream = locationStream
                 .keyBy(Location::getUser)
-                .window(SlidingProcessingTimeWindows.of(Time.seconds(10), Time.seconds(10)))
+                .window(SlidingProcessingTimeWindows.of(Time.seconds(10), Time.seconds(5)))
                 .aggregate(new AverageAggregate());
 
         SingleOutputStreamOperator windowedStream2 = locationStream

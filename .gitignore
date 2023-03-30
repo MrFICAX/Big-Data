@@ -9,6 +9,9 @@ geolife_gps_sorted.csv
 geolife_gps_sorted_without_nodata.csv
 #*.csv
 
+
+Project 2/consumer_flink
+Project 2/consumer_spark
 Project 2/flink-projekat-2/target
 # C extensions
 *.so

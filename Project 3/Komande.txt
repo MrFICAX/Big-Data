@@ -1,8 +1,0 @@
-Generisanje random 32 karaktera:
-openssl rand -hex 32
-
-
-KREIRANJE POJEDINACNOG KONTEJNERA UKOLIKO SE NESTO PROMENI:
-docker-compose up --build producer
-
-influx config create --config-name MrFICAX -u http://influxdb:8086 -org bigdata_projekat -t n6zAU61C3paPpmfY3dvbQLoVORcqcd0STCCw811VB7MUxEKbppao5CSUg8sMaRzSlWiNI09OH6iHMzAWfU_1yw== -active

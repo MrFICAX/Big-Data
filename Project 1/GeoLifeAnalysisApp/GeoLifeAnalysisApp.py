@@ -93,7 +93,7 @@ if __name__ == '__main__':
     conf = SparkConf()
     conf.setMaster("spark://spark-master:7077")
     #conf.setMaster("local")
-    conf.set("spark.driver.memory","4g")
+    #conf.set("spark.driver.memory","4g")
 
     spark = SparkSession.builder.config(conf=conf).appName(appName).getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")

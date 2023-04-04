@@ -111,19 +111,19 @@ if __name__ == '__main__':
     geoLifeDataFrame.show(25)
     #geoLifeDataFrame.printSchema()
        
-    splitDFTime = geoLifeDataFrame.withColumn("date",split(col("time")," ").getItem(0))\
-        .withColumn("exacttime",split(col("time")," ").getItem(1))\
+    splitDFTime = geoLifeDataFrame.withColumn("date", split(col("time")," ").getItem(0))\
+        .withColumn("exacttime", split(col("time")," ").getItem(1))\
         .drop("time")
 
-    splitDFYear = splitDFTime.withColumn("year",split(col("date"),"-").getItem(0))\
-        .withColumn("month",split(col("date"),"-").getItem(1))\
-        .withColumn("day",split(col("date"),"-").getItem(2))\
+    splitDFYear = splitDFTime.withColumn("year", split(col("date"),"-").getItem(0))\
+        .withColumn("month", split(col("date"),"-").getItem(1))\
+        .withColumn("day", split(col("date"),"-").getItem(2))\
         .drop("date")
 
 
-    splitDFTime = splitDFYear.withColumn("hour",split(col("exacttime"),":").getItem(0))\
-        .withColumn("minute",split(col("exacttime"),":").getItem(1))\
-        .withColumn("second",split(col("exacttime"),":").getItem(2))\
+    splitDFTime = splitDFYear.withColumn("hour", split(col("exacttime"),":").getItem(0))\
+        .withColumn("minute", split(col("exacttime"),":").getItem(1))\
+        .withColumn("second", split(col("exacttime"),":").getItem(2))\
         .drop("exacttime")
 
     df = splitDFTime.withColumn('hour', F.regexp_replace('hour', r'^[0]*', ''))

@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
 
     #timestampXaltitudes.printSchema()
-    AltitudeValuesAvgWindows = timestampXaltitudes.groupBy(window(timestampXaltitudes.timestamp, "10 seconds", "10 seconds"), timestampXaltitudes.user).agg(
+    AltitudeValuesAvgWindows = timestampXaltitudes.groupBy(window(timestampXaltitudes.timestamp, "10 seconds", "5 seconds"), timestampXaltitudes.user).agg(
         mean("alt").alias("meanvalue"),
         max("alt").alias("maxvalue"),
         min("alt").alias("minvalue"),
@@ -132,7 +132,13 @@ if __name__ == '__main__':
 
 
     #AltitudeValuesAvgWindows.printSchema()
-    AltitudeValuesAvgWindowsForDB = AltitudeValuesAvgWindows.selectExpr("window.start as start", "window.end as end", "user", "meanvalue", "maxvalue", "minvalue", "times_data_sent" )
+    AltitudeValuesAvgWindowsForDB = AltitudeValuesAvgWindows.selectExpr("window.start as start",
+                                                                        "window.end as end",
+                                                                        "user", 
+                                                                        "meanvalue", 
+                                                                        "maxvalue", 
+                                                                        "minvalue", 
+                                                                        "times_data_sent" )
     #AltitudeValuesAvgWindowsForDB.printSchema()
 
 

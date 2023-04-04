@@ -1,0 +1,7 @@
+cqlsh
+
+USE locations_db;
+
+SELECT * FROM flinkgeolocation;
+
+SELECT * FROM geolocation;

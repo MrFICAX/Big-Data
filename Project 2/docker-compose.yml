@@ -60,6 +60,7 @@ services:
       ZOOKEEPER_HOST: zookeeper:2181
       KAFKA_TOPIC: locations
       KAFKA_CONSUMER_GROUP: Flink-Group
+      
   cassandra:
     image: cassandra:4.0
     ports:

@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # print(inputValuesDictionary)
 
     conf = SparkConf()
-    # conf.setMaster("spark://spark-master-x:7077")
+    #conf.setMaster("spark://spark-master-3:7077")
     conf.setMaster("local")
     # conf.set("spark.driver.memory","4g")
     # conf.set("spark.cassandra.connection.host", "cassandra")

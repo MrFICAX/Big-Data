@@ -1,0 +1,5 @@
+
+
+docker run -it --rm --network bde --env-file hadoop.env -p 4040:4040 --name spark bde2020/spark-base:3.1.2-hadoop3.2 bash
+
+/spark/bin/spark-submit --master spark://spark-master:7077 hdfs://namenode:9000/GeoLifeAnalysisApp.py hdfs://namenode:9000/geolife_gps_trajectories.csv hdfs://namenode:9000/geolife_gps_filtered.csv year lat lon \| 2010 2011 39.6 39.8 116.4 116.6

@@ -22,7 +22,4 @@ public class Location {
     final Integer Second;
     final Integer   Timestamp;
 
-    public Integer year(){
-        return Year;
-    }
 }

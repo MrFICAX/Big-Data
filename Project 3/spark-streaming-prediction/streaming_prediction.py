@@ -31,13 +31,6 @@ schema = StructType(
     ]
 )
 
-# ENV INFLUXDB_HOST: influxdb
-# ENV INFLUXDB_PORT: 8086
-# ENV INFLUXDB_USERNAME: admin
-# ENV INFLUXDB_PASSWORD: admin
-# ENV INFLUXDB_TOKEN n6zAU61C3paPpmfY3dvbQLoVORcqcd0STCCw811VB7MUxEKbppao5CSUg8sMaRzSlWiNI09OH6iHMzAWfU_1yw==
-# ENV INFLUXDB_ORG: locations
-
 INFLUXDB_ORG = os.getenv('INFLUXDB_ORG')
 INFLUXDB_BUCKET = os.getenv('INFLUXDB_BUCKET')
 INFLUXDB_HOST = os.getenv('INFLUXDB_HOST')
@@ -79,6 +72,8 @@ class InfluxDBWriter:
             .field("User_index", int(row['user_index']))
             .field("Label_prediction", int(row['prediction']))
         )
+        print("Label_index", int(row['label_index']), "Label_prediction", int(row['prediction']))
+        print()
         return point
 
 if __name__ == '__main__':
@@ -102,8 +97,8 @@ if __name__ == '__main__':
 
 
     conf = SparkConf()
-    # conf.setMaster("spark://spark-master-x:7077")
-    conf.setMaster("local")
+    conf.setMaster("spark://spark-master-3:7077")
+    #conf.setMaster("local")
     # conf.set("spark.driver.memory","4g")
     # conf.set("spark.cassandra.connection.host", "cassandra")
     # conf.set("spark.cassandra.connection.port", 9042)
@@ -154,6 +149,11 @@ if __name__ == '__main__':
 
     prediction.printSchema()
 
+    query = prediction.writeStream \
+        .foreach(InfluxDBWriter()) \
+        .start()
+    query.awaitTermination()
+
     # evaluatorAccuracy = MulticlassClassificationEvaluator(
     #     labelCol="user_index", predictionCol="prediction", metricName="accuracy")
     
@@ -174,10 +174,6 @@ if __name__ == '__main__':
     #     .awaitTermination()
     # )
 
-    query = prediction.writeStream \
-        .foreach(InfluxDBWriter()) \
-        .start()
-    query.awaitTermination()
 
     # print(f"> Stampanje u konzoli ...")
     # query = (prediction

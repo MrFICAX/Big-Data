@@ -20,6 +20,7 @@ package projekat;
 
 import models.Location;
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -63,7 +64,11 @@ public class DataStreamJob {
 
         DataStream<String> dataStream = StreamConsumer(inputTopic, server, environment);
 
-        DataStream<Location> locationStream = ConvertStreamFromJsonToLocationType(dataStream);
+        DataStream<Location> locationStream = ConvertStreamFromJsonToLocationType(dataStream).filter(new FilterFunction<Location>() {
+            @Override
+            public boolean filter(Location location) throws Exception {
+                return (location.getLongitude() > 115.2 && location.getLongitude() < 117.5);            }
+        });
         //locationStream.print();
 
         SingleOutputStreamOperator windowedStream = locationStream
@@ -83,9 +88,7 @@ public class DataStreamJob {
         CassandraService cassandraService = new CassandraService();
         cassandraService.sinkToCassandraDB(windowedStream);
 
-
         environment.execute();
-
     }
 
     public static DataStream<Location> ConvertStreamFromJsonToLocationType(DataStream<String> jsonStream) {

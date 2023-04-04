@@ -49,6 +49,7 @@ class InfluxDBWriter:
         return True
 
     def process(self, row):
+        print(row)
         self.write_api.write(bucket=INFLUXDB_BUCKET, record=self._row_to_point(row))
 
     def close(self, error):
@@ -57,23 +58,22 @@ class InfluxDBWriter:
         print(f"Closed with error: {error}")
 
     def _row_to_point(self, row):
-        print(row)
+        #print(row)
 
         # timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
         point = (
-            Point.measurement("locations_measurement2")
-            .tag("measure", "locations_measurement2")
+            Point.measurement("locations_measurement3")
+            .tag("measure", "locations_measurement3")
             .time(datetime.utcnow(), WritePrecision.NS)
             .field("Latitude", float(row['lat']))
             .field("Longitude", float(row['lon']))
             .field("Altitude", float(row['alt']))
-            .field("Label_index", int(row['label_index']))
+            .field("Label_index", float(row['label_index']))
             .field("User_index", int(row['user_index']))
-            .field("Label_prediction", int(row['prediction']))
+            .field("Label_prediction", float(row['prediction']))
         )
-        print("Label_index", int(row['label_index']), "Label_prediction", int(row['prediction']))
-        print()
+        #print("Label_index", int(row['label_index']), "Label_prediction", int(row['prediction']))
         return point
 
 if __name__ == '__main__':
@@ -149,10 +149,21 @@ if __name__ == '__main__':
 
     prediction.printSchema()
 
+    print("Prediction started..")
+
     query = prediction.writeStream \
         .foreach(InfluxDBWriter()) \
         .start()
     query.awaitTermination()
+
+    # query2 = (
+    #     prediction.writeStream.outputMode("update")
+    #     .queryName("average_latitude")
+    #     .format("console")
+    #     .option("truncate", "false")
+    #     .start()
+        
+    # ).awaitTermination()
 
     # evaluatorAccuracy = MulticlassClassificationEvaluator(
     #     labelCol="user_index", predictionCol="prediction", metricName="accuracy")

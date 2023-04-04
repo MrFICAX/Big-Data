@@ -124,18 +124,18 @@ if __name__ == '__main__':
 # metricName="precisionByLabel"
 # metricName="recallByLabel"
 
-    evaluatorAccuracy = MulticlassClassificationEvaluator(
-        labelCol="label_index", predictionCol="prediction", metricName="accuracy")
-    evaluatorF1 = MulticlassClassificationEvaluator(
-        labelCol="label_index", predictionCol="prediction", metricName="f1")
-    evaluatorByLabel = MulticlassClassificationEvaluator(
-        labelCol="label_index", predictionCol="prediction", metricName="precisionByLabel")
-    evaluatorRecallByLabel = MulticlassClassificationEvaluator(
-        labelCol="label_index", predictionCol="prediction", metricName="recallByLabel")
+    # evaluatorAccuracy = MulticlassClassificationEvaluator(
+    #     labelCol="label_index", predictionCol="prediction", metricName="accuracy")
+    # evaluatorF1 = MulticlassClassificationEvaluator(
+    #     labelCol="label_index", predictionCol="prediction", metricName="f1")
+    # evaluatorByLabel = MulticlassClassificationEvaluator(
+    #     labelCol="label_index", predictionCol="prediction", metricName="precisionByLabel")
+    # evaluatorRecallByLabel = MulticlassClassificationEvaluator(
+    #     labelCol="label_index", predictionCol="prediction", metricName="recallByLabel")
 
-    print(evaluatorAccuracy.evaluate(predictions))
-    print(evaluatorAccuracy.evaluate(predictions))
-    print(evaluatorByLabel.evaluate(predictions))
-    print(evaluatorRecallByLabel.evaluate(predictions))
+    # print(evaluatorAccuracy.evaluate(predictions))
+    # print(evaluatorAccuracy.evaluate(predictions))
+    # print(evaluatorByLabel.evaluate(predictions))
+    # print(evaluatorRecallByLabel.evaluate(predictions))
 
     rfModel.write().overwrite().save(CLASSIFICATION_MODEL) #("hdfs://namenode:9000/model/RfModel")
